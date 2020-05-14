@@ -1,0 +1,141 @@
+<html>
+<canvas id="c" width="600" height="600" style="float:left">
+
+</canvas>
+<div style="float:left">
+    <h1>Pandemic simulator 600x600</h1>
+    <label for="vol">People Count</label>
+<input type="number" id="peopleCount" value="100"><br>
+<label for="vol">Infected Count</label>
+<input type="number" id="infectedCount" value="1"><br>
+<label for="vol">Infection Range min 0 max 100</label>
+<input type="range" id="infectRange" value="30" name="vol" min="0" max="100"><br>
+<label for="vol">Danger Range min 0 max 100</label>
+<input type="range" id="dangerRange" value="50" name="vol" min="0" max="100"><br>
+<label for="vol">Size</label>
+<input type="number" id="size" value="10" id="vol" name="vol" min="10" max="50"><br>
+<button onclick="start()"> Start Simulation</button><br>
+<button onclick="stop()"> stop Simulation</button>
+</div>
+<script>
+    var c = document.getElementById("c");
+    var context = c.getContext("2d");
+    var width = c.getAttribute('width')
+    var height = c.getAttribute('height')
+    var infectRange = 10
+    var dangerRange = 30
+    var size = 10
+
+    class person {
+        constructor(x, y, infected) {
+            this.x = x
+            this.y = y
+            this.infected = infected
+            this.size = size
+        }
+        move() {
+            var x = (Math.random() > 0.5 ? (-1 * size / 2) : size / 2)
+            var y = (Math.random() > 0.5 ? (-1 * size / 2) : size / 2)
+            var tempX = this.x + x
+            var tempY = this.y + y
+            if (tempX < 0 || width - (2 * size) <= tempX) {
+                this.x = this.x - (2 * x)
+            } else {
+                this.x = tempX
+            }
+            if (tempY < 0 || height - (2 * size) <= tempY) {
+                this.y = this.y - (2 * y)
+            } else {
+                this.y = tempY
+            }
+
+        }
+        socialDistance(people) {
+            var closePeople = people.filter(p =>
+                this.x - dangerRange <= p.x && p.x <= this.x + dangerRange &&
+                this.y - dangerRange <= p.y && p.y <= this.y + dangerRange
+            )
+            closePeople.forEach(p => {
+                context.beginPath();
+                context.moveTo(this.x + this.size, this.y + this.size);
+                context.lineTo(p.x + this.size, p.y + this.size);
+                context.strokeStyle = '#aa00aa';
+                context.lineWidth = 0.2;
+                context.stroke()
+            })
+            closePeople = people.filter(p =>
+                this.x - infectRange <= p.x && p.x <= this.x + infectRange &&
+                this.y - infectRange <= p.y && p.y <= this.y + infectRange
+            )
+            closePeople.forEach(p => {
+                context.beginPath();
+                context.moveTo(this.x + this.size, this.y + this.size);
+                context.lineTo(p.x + this.size, p.y + this.size);
+                context.strokeStyle = '#ff0000';
+                context.lineWidth = 3;
+                context.stroke()
+            })
+            if (closePeople.some(p => p.infected)) {
+                this.infected = true
+            }
+
+        }
+        draw() {
+            console.log(this.x)
+            context.beginPath();
+            context.arc(this.x + this.size, this.y + this.size, this.size, 2 * Math.PI, false);
+            if (this.infected) {
+                context.fillStyle = 'red';
+            } else {
+                context.fillStyle = 'green';
+
+            }
+            context.fill();
+        }
+    }
+
+    people = []
+
+    draw()
+    var drawtimeout = ''
+    function draw() {
+
+        context.clearRect(0, 0, width, height);
+        people.forEach(p => {
+            p.socialDistance(people)
+            p.move()
+            p.draw()
+        });
+        if (people.every(x => x.infected)) {
+            return
+        }
+        drawtimeout = setTimeout(() => draw(), 50);
+
+    }
+    function stop() {
+        clearTimeout(drawtimeout)
+    }
+    function start() {
+        people = []
+        clearTimeout(drawtimeout)
+        peopleCount = +document.getElementById('peopleCount').value
+        infectedCount = +document.getElementById('infectedCount').value
+        infectRange = +document.getElementById('infectRange').value
+        dangerRange = +document.getElementById('dangerRange').value
+        size = +document.getElementById('size').value
+
+        for (let index = 0; index < peopleCount; index++) {
+            var x = parseInt(Math.random() * width - 2 * (size))
+            var y = parseInt(Math.random() * height - 2 * (size))
+            people.push(new person(x, y, false))
+        }
+        for (let index = 0; index < infectedCount; index++) {
+            var x = parseInt(Math.random() * width - 2 * (size))
+            var y = parseInt(Math.random() * height - 2 * (size))
+            people.push(new person(x, y, true))
+        }
+        draw()
+    }
+</script>
+
+</html>
